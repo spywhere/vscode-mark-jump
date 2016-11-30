@@ -1,8 +1,8 @@
+"use strict";
 import * as vscode from "vscode";
 import * as XRegExp from "xregexp";
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log("[Mark Jump] Starting...");
     context.subscriptions.push(new MarkJumpController(new MarkJump()));
 }
 
@@ -11,7 +11,6 @@ class MarkJumpController {
     private disposable: vscode.Disposable;
 
     constructor(markJump: MarkJump){
-        console.log("[Mark Jump] Activated");
         this.markJump = markJump;
 
         let subscriptions: vscode.Disposable[] = [];
@@ -37,12 +36,13 @@ interface Filter {
 }
 
 class MarkJump {
-    jumpToSection(){
-        let filterKeys: string[] = [];
+    jumpToSection(...args: any[]){
+        let filterKeys: string[] = args;
         let editor = vscode.window.activeTextEditor;
         if(!editor){
             return;
         }
+
         let configurations = vscode.workspace.getConfiguration("markJump");
         let filters: Filter[] = [];
 
@@ -73,15 +73,21 @@ class MarkJump {
         let lineCount = editor.document.lineCount;
         for(let lineNumber = 0; lineNumber < lineCount; lineNumber += 1){
             let lineText = editor.document.lineAt(lineNumber).text;
-            let item = filters.find(
+            let filter = filters.find(
                 filter => filter.test(lineNumber, lineText)
-            ).getItem(
+            );
+            if(!filter){
+                continue;
+            }
+            let item = filter.getItem(
                 lineNumber, lineText
             );
-            if(item){
-                items.push(item);
+            if(!item){
+                continue;
             }
+            items.push(item);
         }
+
         if(items.length <= 0){
             console.log("[Mark Jump] No item available");
             return;
@@ -90,6 +96,7 @@ class MarkJump {
         let lastSelection = editor.selection;
         vscode.window.showQuickPick(items, {
             onDidSelectItem: (item: MarkItem) => {
+                // TODO: Highlight the line
                 editor.revealRange(
                     item.range, vscode.TextEditorRevealType.InCenter
                 );
@@ -122,7 +129,22 @@ class MarkFilter implements Filter {
     }
 
     getItem(lineNumber: number, lineText: string): MarkItem | undefined {
-        return undefined;
+        let item: MarkItem | undefined = undefined;
+        this.patterns.forEach(pattern => {
+            let matches = XRegExp(pattern).exec(lineText);
+            if(!matches){
+                return;
+            }
+            item = {
+                range: new vscode.Range(
+                    lineNumber, 0, lineNumber, lineText.length
+                ),
+                label: "Mark",
+                description: matches["description"] || "Description",
+                detail: matches["writer"] || "Detail"
+            };
+        });
+        return item;
     }
 }
 
@@ -143,8 +165,13 @@ class TODOFilter implements Filter {
         let item: MarkItem | undefined = undefined;
         this.patterns.forEach(pattern => {
             let matches = XRegExp(pattern).exec(lineText);
+            if(!matches){
+                return;
+            }
             item = {
-                range: new vscode.Range(lineNumber, 0, lineNumber, 0),
+                range: new vscode.Range(
+                    lineNumber, 0, lineNumber, lineText.length
+                ),
                 label: "TODO",
                 description: matches["description"] || "Description",
                 detail: matches["writer"] || "Detail"
@@ -168,6 +195,21 @@ class NoteFilter implements Filter {
     }
 
     getItem(lineNumber: number, lineText: string): MarkItem | undefined {
-        return undefined;
+        let item: MarkItem | undefined = undefined;
+        this.patterns.forEach(pattern => {
+            let matches = XRegExp(pattern).exec(lineText);
+            if(!matches){
+                return;
+            }
+            item = {
+                range: new vscode.Range(
+                    lineNumber, 0, lineNumber, lineText.length
+                ),
+                label: "NOTE",
+                description: matches["description"] || "Description",
+                detail: matches["writer"] || "Detail"
+            };
+        });
+        return item;
     }
 }

@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "spywhere",
   "bugs": {
     "url": "https://github.com/spywhere/vscode-mark-jump/issues"
