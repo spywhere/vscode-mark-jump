@@ -2,8 +2,9 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "publisher": "spywhere",
+  "icon": "images/icon.png",
   "bugs": {
     "url": "https://github.com/spywhere/vscode-mark-jump/issues"
   },
@@ -26,32 +27,64 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:markJump.jumpToSection"
+    "*"
   ],
   "main": "./out/extension",
   "contributes": {
     "commands": [
       {
+        "command": "markJump.jumpToMark",
+        "title": "Mark Jump: Jump to Marks..."
+      }, {
         "command": "markJump.jumpToSection",
-        "title": "Mark Jump: Jump to Section..."
+        "title": "Mark Jump: Jump to Sections..."
+      }, {
+        "command": "markJump.jumpToTODO",
+        "title": "Mark Jump: Jump to TODOs..."
+      }, {
+        "command": "markJump.jumpToNote",
+        "title": "Mark Jump: Jump to Notes..."
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markJump.jumpToMark",
+        "key": "ctrl+alt+m",
+        "mac": "ctrl+cmd+m",
+        "when": "editorTextFocus"
+      }, {
+        "command": "markJump.jumpToSection",
+        "key": "ctrl+alt+s",
+        "mac": "ctrl+cmd+s",
+        "when": "editorTextFocus"
+      }, {
+        "command": "markJump.jumpToTODO",
+        "key": "ctrl+alt+t",
+        "mac": "ctrl+cmd+t",
+        "when": "editorTextFocus"
+      }, {
+        "command": "markJump.jumpToNote",
+        "key": "ctrl+alt+n",
+        "mac": "ctrl+cmd+n",
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {
       "type": "object",
       "title": "Mark Jump Configurations",
       "properties": {
-        "markJump.markPatterns": {
+        "markJump.sectionPatterns": {
           "type": "array",
           "default": [
-            "//\\s*[Mm][Aa][Rr][Kk]\\s*:\\s*(?<name>.+)$",
-            "#\\s*pragma\\s+(?<name>.+)$"
+            "//\\s*[Mm][Aa][Rr][Kk]\\s*:\\s*(?<description>.+)$",
+            "#\\s*pragma\\s+(?<description>.+)$"
           ],
           "items": {
             "type": "string"
           },
           "description": "A list of regular patterns to match the section."
         },
-        "markJump.additionalMarkPatterns": {
+        "markJump.additionalSectionPatterns": {
           "type": "array",
           "default": [],
           "items": {
@@ -95,6 +128,21 @@
             "type": "string"
           },
           "description": "Additional list of regular pattern to match the notes. Use this configuration to avoid replacing default patterns."
+        },
+        "markJump.highlightColor.dark": {
+          "type": "string",
+          "default": "rgba(60, 60, 60, 0.75)",
+          "description": "Highlight rendering color for dark themes."
+        },
+        "markJump.highlightColor.light": {
+          "type": "string",
+          "default": "rgba(220, 220, 220, 0.75)",
+          "description": "Highlight rendering color for light themes."
+        },
+        "markJump.showStatusItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show numbers of marks in the status bar."
         }
       }
     }

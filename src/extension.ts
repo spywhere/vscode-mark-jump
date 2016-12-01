@@ -3,20 +3,58 @@ import * as vscode from "vscode";
 import * as XRegExp from "xregexp";
 
 export function activate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(new MarkJumpController(new MarkJump()));
+    let markJump = new MarkJump();
+    context.subscriptions.push(markJump);
+    context.subscriptions.push(new MarkJumpController(markJump));
 }
 
 class MarkJumpController {
     private markJump: MarkJump;
     private disposable: vscode.Disposable;
+    private lastLine: number = 0;
 
     constructor(markJump: MarkJump){
         this.markJump = markJump;
 
         let subscriptions: vscode.Disposable[] = [];
         subscriptions.push(vscode.commands.registerCommand(
-            "markJump.jumpToSection", this.markJump.jumpToSection
+            "markJump.jumpToMark", () => {
+                this.markJump.jumpToMark();
+            }
         ));
+        subscriptions.push(vscode.commands.registerCommand(
+            "markJump.jumpToSection", () => {
+                this.markJump.jumpToMark("section");
+            }
+        ));
+        subscriptions.push(vscode.commands.registerCommand(
+            "markJump.jumpToTODO", () => {
+                this.markJump.jumpToMark("todo");
+            }
+        ));
+        subscriptions.push(vscode.commands.registerCommand(
+            "markJump.jumpToNote", () => {
+                this.markJump.jumpToMark("note");
+            }
+        ));
+
+        this.markJump.createStatusBar();
+        vscode.workspace.onDidChangeConfiguration(event => {
+            this.markJump.updateStatusBar();
+        }, this, subscriptions);
+        vscode.window.onDidChangeActiveTextEditor(event => {
+            this.markJump.updateStatusBar();
+        }, this, subscriptions);
+        vscode.window.onDidChangeTextEditorSelection(event => {
+            if(event.selections.length > 1){
+                return;
+            }
+            if(this.lastLine === event.selections[0].active.line){
+                return;
+            }
+            this.lastLine = event.selections[0].active.line;
+            this.markJump.updateStatusBar();
+        }, this, subscriptions);
 
         this.disposable = vscode.Disposable.from(...subscriptions);
     }
@@ -27,38 +65,188 @@ class MarkJumpController {
 }
 
 interface MarkItem extends vscode.QuickPickItem {
+    type: "section" | "todo" | "note";
     range: vscode.Range;
 }
 
-interface Filter {
+interface MarkFilter {
     test(lineNumber: number, lineText: string): boolean;
     getItem(lineNumber: number, lineText: string): MarkItem | undefined;
 }
 
 class MarkJump {
-    jumpToSection(...args: any[]){
-        let filterKeys: string[] = args;
+    statusItem: vscode.StatusBarItem;
+
+    createStatusBar(){
+        if(this.statusItem){
+            return;
+        }
+        this.statusItem = vscode.window.createStatusBarItem(
+            vscode.StatusBarAlignment.Left, 10
+        );
+        this.statusItem.command = "markJump.jumpToMark";
+        this.statusItem.hide();
+        this.updateStatusBar();
+    }
+
+    dispose(){
+        this.statusItem.dispose();
+    }
+
+    updateStatusBar(){
         let editor = vscode.window.activeTextEditor;
         if(!editor){
             return;
         }
 
         let configurations = vscode.workspace.getConfiguration("markJump");
-        let filters: Filter[] = [];
-
-        if(filterKeys.length <= 0 || "mark" in filterKeys){
-            let patterns = configurations.get<string[]>("markPatterns").concat(
-                configurations.get<string[]>("additionalMarkPatterns")
-            );
-            filters.push(new MarkFilter(patterns));
+        if(!configurations.get<boolean>("showStatusItem")){
+            this.statusItem.hide();
+            return;
         }
-        if(filterKeys.length <= 0 || "todo" in filters){
+
+        let marks = this.getMarks(editor);
+
+        if(marks.length <= 0){
+            this.statusItem.hide();
+            return;
+        }
+
+        let markCount = {
+            section: 0,
+            todo: 0,
+            note: 0
+        };
+
+        marks.forEach(mark => {
+            markCount[mark.type] += 1;
+        });
+
+        this.statusItem.text = `${
+            markCount.section > 0 ?
+            `$(list-unordered) ${markCount.section} ` : ""
+        }${
+            markCount.todo > 0 ?
+            `$(pencil) ${markCount.todo} ` : ""
+        }${
+            markCount.note > 0 ?
+            `$(book) ${markCount.note}` : ""
+        }`;
+
+        let tooltips: string[] = [];
+        if(markCount.section > 0){
+            tooltips.push(`${markCount.section} Sections`);
+        }
+        if(markCount.todo > 0){
+            tooltips.push(`${markCount.todo} TODOs`);
+        }
+        if(markCount.note > 0){
+            tooltips.push(`${markCount.note} Notes`);
+        }
+
+        this.statusItem.tooltip = tooltips.join(", ");
+
+        this.statusItem.show();
+    }
+
+    jumpToMark(...filters: string[]){
+        let editor = vscode.window.activeTextEditor;
+        if(!editor){
+            return;
+        }
+
+        let configurations = vscode.workspace.getConfiguration("markJump");
+        let marks = this.getMarks(editor, ...filters);
+
+        if(marks.length <= 0){
+            if(filters.length === 1 && filters.indexOf("todo") >= 0){
+                vscode.window.showInformationMessage(
+                    "No TODO left. Well done!"
+                );
+            }else{
+                vscode.window.showInformationMessage("No mark is set.");
+            }
+            return;
+        }
+
+        let options: vscode.DecorationRenderOptions = {
+            isWholeLine: true
+        };
+
+        let baseValue = configurations.get<string>(
+            "highlightColor"
+        );
+        let darkValue = configurations.get<string>(
+            "highlightColor.dark"
+        );
+        let lightValue = configurations.get<string>(
+            "highlightColor.light"
+        );
+        if(!baseValue){
+            baseValue = darkValue || lightValue;
+        }
+
+        options.backgroundColor = baseValue;
+        options.overviewRulerColor = baseValue;
+        if(darkValue){
+            options.dark = {
+                backgroundColor: darkValue,
+                overviewRulerColor: darkValue
+            };
+        }
+        if(lightValue){
+            options.light = {
+                backgroundColor: lightValue,
+                overviewRulerColor: lightValue
+            };
+        }
+
+        let highlightDecoration = vscode.window.createTextEditorDecorationType(
+            options
+        );
+
+        let lastSelection = editor.selection;
+        vscode.window.showQuickPick(marks, {
+            matchOnDescription: true,
+            matchOnDetail: true,
+            onDidSelectItem: (mark: MarkItem) => {
+                editor.setDecorations(highlightDecoration, [mark.range]);
+                editor.revealRange(
+                    mark.range, vscode.TextEditorRevealType.InCenter
+                );
+            }
+        }).then(mark => {
+            editor.setDecorations(highlightDecoration, []);
+            highlightDecoration.dispose();
+            if(!mark){
+                editor.revealRange(
+                    lastSelection, vscode.TextEditorRevealType.InCenter
+                );
+                return;
+            }
+            editor.revealRange(
+                mark.range, vscode.TextEditorRevealType.InCenter
+            );
+        });
+    }
+
+    getMarks(editor: vscode.TextEditor, ...filterKeys: string[]){
+        let configurations = vscode.workspace.getConfiguration("markJump");
+        let filters: MarkFilter[] = [];
+
+        if(filterKeys.length <= 0 || filterKeys.indexOf("section") >= 0){
+            let patterns = configurations.get<string[]>("sectionPatterns").concat(
+                configurations.get<string[]>("additionalSectionPatterns")
+            );
+            filters.push(new SectionFilter(patterns));
+        }
+        if(filterKeys.length <= 0 || filterKeys.indexOf("todo") >= 0){
             let patterns = configurations.get<string[]>("todoPatterns").concat(
                 configurations.get<string[]>("additionalTODOPatterns")
             );
             filters.push(new TODOFilter(patterns));
         }
-        if(filterKeys.length <= 0 || "note" in filters){
+        if(filterKeys.length <= 0 || filterKeys.indexOf("note") >= 0){
             let patterns = configurations.get<string[]>("notePatterns").concat(
                 configurations.get<string[]>("additionalNotePatterns")
             );
@@ -66,7 +254,7 @@ class MarkJump {
         }
         if(!filters || filters.length <= 0){
             console.log("[Mark Jump] No filter available");
-            return;
+            return [];
         }
 
         let items: MarkItem[] = [];
@@ -88,34 +276,11 @@ class MarkJump {
             items.push(item);
         }
 
-        if(items.length <= 0){
-            console.log("[Mark Jump] No item available");
-            return;
-        }
-
-        let lastSelection = editor.selection;
-        vscode.window.showQuickPick(items, {
-            onDidSelectItem: (item: MarkItem) => {
-                // TODO: Highlight the line
-                editor.revealRange(
-                    item.range, vscode.TextEditorRevealType.InCenter
-                );
-            }
-        }).then(item => {
-            if(!item){
-                editor.revealRange(
-                    lastSelection, vscode.TextEditorRevealType.InCenter
-                );
-                return;
-            }
-            editor.revealRange(
-                item.range, vscode.TextEditorRevealType.InCenter
-            );
-        });
+        return items;
     }
 }
 
-class MarkFilter implements Filter {
+class SectionFilter implements MarkFilter {
     patterns: string[];
 
     constructor(patterns: string[] = []){
@@ -124,31 +289,34 @@ class MarkFilter implements Filter {
 
     test(lineNumber: number, lineText: string): boolean {
         return this.patterns.some(pattern => {
-            return XRegExp(pattern).test(lineText);
+            return XRegExp.test(lineText, XRegExp(pattern));
         });
     }
 
     getItem(lineNumber: number, lineText: string): MarkItem | undefined {
         let item: MarkItem | undefined = undefined;
         this.patterns.forEach(pattern => {
-            let matches = XRegExp(pattern).exec(lineText);
+            let matches = XRegExp.exec(lineText, XRegExp(pattern));
             if(!matches){
                 return;
             }
             item = {
+                type: "section",
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
-                label: "Mark",
-                description: matches["description"] || "Description",
-                detail: matches["writer"] || "Detail"
+                label: matches["description"] || "",
+                description: "",
+                detail: (
+                    `on line ${lineNumber}`
+                )
             };
         });
         return item;
     }
 }
 
-class TODOFilter implements Filter {
+class TODOFilter implements MarkFilter {
     patterns: string[];
 
     constructor(patterns: string[] = []){
@@ -157,31 +325,34 @@ class TODOFilter implements Filter {
 
     test(lineNumber: number, lineText: string): boolean {
         return this.patterns.some(pattern => {
-            return XRegExp(pattern).test(lineText);
+            return XRegExp.test(lineText, XRegExp(pattern));
         });
     }
 
     getItem(lineNumber: number, lineText: string): MarkItem | undefined {
         let item: MarkItem | undefined = undefined;
         this.patterns.forEach(pattern => {
-            let matches = XRegExp(pattern).exec(lineText);
+            let matches = XRegExp.exec(lineText, XRegExp(pattern));
             if(!matches){
                 return;
             }
             item = {
+                type: "todo",
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
-                label: "TODO",
-                description: matches["description"] || "Description",
-                detail: matches["writer"] || "Detail"
+                label: `[TODO] on line ${lineNumber}`,
+                description: matches["description"] || "",
+                detail: (
+                    matches["writer"] ? ` by ${matches["writer"]}` : undefined
+                )
             };
         });
         return item;
     }
 }
 
-class NoteFilter implements Filter {
+class NoteFilter implements MarkFilter {
     patterns: string[];
 
     constructor(patterns: string[] = []){
@@ -190,24 +361,27 @@ class NoteFilter implements Filter {
 
     test(lineNumber: number, lineText: string): boolean {
         return this.patterns.some(pattern => {
-            return XRegExp(pattern).test(lineText);
+            return XRegExp.test(lineText, XRegExp(pattern));
         });
     }
 
     getItem(lineNumber: number, lineText: string): MarkItem | undefined {
         let item: MarkItem | undefined = undefined;
         this.patterns.forEach(pattern => {
-            let matches = XRegExp(pattern).exec(lineText);
+            let matches = XRegExp.exec(lineText, XRegExp(pattern));
             if(!matches){
                 return;
             }
             item = {
+                type: "note",
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
-                label: "NOTE",
-                description: matches["description"] || "Description",
-                detail: matches["writer"] || "Detail"
+                label: `[NOTE] on line ${lineNumber}`,
+                description: matches["description"] || "",
+                detail: (
+                    matches["writer"] ? ` by ${matches["writer"]}` : undefined
+                )
             };
         });
         return item;
