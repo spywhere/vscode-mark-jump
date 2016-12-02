@@ -135,13 +135,25 @@ class MarkJump {
 
         let tooltips: string[] = [];
         if(markCount.section > 0){
-            tooltips.push(`${markCount.section} Sections`);
+            tooltips.push(
+                `${markCount.section} Section${
+                    markCount.section > 1 ? "s" : ""
+                }`
+            );
         }
         if(markCount.todo > 0){
-            tooltips.push(`${markCount.todo} TODOs`);
+            tooltips.push(
+                `${markCount.todo} TODO${
+                    markCount.todo > 1 ? "s" : ""
+                }`
+            );
         }
         if(markCount.note > 0){
-            tooltips.push(`${markCount.note} Notes`);
+            tooltips.push(
+                `${markCount.note} Note${
+                    markCount.note > 1 ? "s" : ""
+                }`
+            );
         }
 
         this.statusItem.tooltip = tooltips.join(", ");
@@ -227,6 +239,9 @@ class MarkJump {
             editor.revealRange(
                 mark.range, vscode.TextEditorRevealType.InCenter
             );
+            editor.selection = new vscode.Selection(
+                mark.range.end, mark.range.end
+            );
         });
     }
 
@@ -305,7 +320,7 @@ class SectionFilter implements MarkFilter {
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
-                label: matches["description"] || "",
+                label: `$(list-unordered) ${matches["description"]}` || "",
                 description: "",
                 detail: (
                     `on line ${lineNumber}`
@@ -341,8 +356,8 @@ class TODOFilter implements MarkFilter {
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
-                label: `[TODO] on line ${lineNumber}`,
-                description: matches["description"] || "",
+                label: `$(pencil) on line ${lineNumber}`,
+                description: `TODO: ${matches["description"]}` || "",
                 detail: (
                     matches["writer"] ? ` by ${matches["writer"]}` : undefined
                 )
@@ -377,8 +392,8 @@ class NoteFilter implements MarkFilter {
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
-                label: `[NOTE] on line ${lineNumber}`,
-                description: matches["description"] || "",
+                label: `$(book) on line ${lineNumber}`,
+                description: `NOTE: ${matches["description"]}` || "",
                 detail: (
                     matches["writer"] ? ` by ${matches["writer"]}` : undefined
                 )
