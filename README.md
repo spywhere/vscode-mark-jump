@@ -10,10 +10,12 @@ Jump to the marked section in the code
 Mark Jump is simply an extension that let you jump across your marking points in the code.
 
 ### How to use it?
-Simply install the extension, Mark Jump should show the mark count in the status bar! Click them to jump to each of the mark.
+Simply install the extension, Mark Jump should show the mark count in the status bar!
+Use arrow keys to jump between them, click to jump to it.
 
 You can also use the following key bindings to jump through various type of marks...
 
+- `Ctrl+Alt+P` / `Ctrl+Cmd+P`: Jump to all marks in the project
 - `Ctrl+Alt+M` / `Ctrl+Cmd+M`: Jump to all marks
 - `Ctrl+Alt+S` / `Ctrl+Cmd+S`: Jump to all section marks
 - `Ctrl+Alt+T` / `Ctrl+Cmd+T`: Jump to all TODOs

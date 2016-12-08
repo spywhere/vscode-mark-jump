@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -33,6 +33,9 @@
   "contributes": {
     "commands": [
       {
+        "command": "markJump.jumpToProjectMark",
+        "title": "Mark Jump: Jump to Project-wide Marks..."
+      }, {
         "command": "markJump.jumpToMark",
         "title": "Mark Jump: Jump to Marks..."
       }, {
@@ -48,25 +51,25 @@
     ],
     "keybindings": [
       {
+        "command": "markJump.jumpToProjectMark",
+        "key": "ctrl+alt+p",
+        "mac": "ctrl+cmd+p"
+      }, {
         "command": "markJump.jumpToMark",
         "key": "ctrl+alt+m",
-        "mac": "ctrl+cmd+m",
-        "when": "editorTextFocus"
+        "mac": "ctrl+cmd+m"
       }, {
         "command": "markJump.jumpToSection",
         "key": "ctrl+alt+s",
-        "mac": "ctrl+cmd+s",
-        "when": "editorTextFocus"
+        "mac": "ctrl+cmd+s"
       }, {
         "command": "markJump.jumpToTODO",
         "key": "ctrl+alt+t",
-        "mac": "ctrl+cmd+t",
-        "when": "editorTextFocus"
+        "mac": "ctrl+cmd+t"
       }, {
         "command": "markJump.jumpToNote",
         "key": "ctrl+alt+n",
-        "mac": "ctrl+cmd+n",
-        "when": "editorTextFocus"
+        "mac": "ctrl+cmd+n"
       }
     ],
     "configuration": {
@@ -128,6 +131,21 @@
             "type": "string"
           },
           "description": "Additional list of regular pattern to match the notes. Use this configuration to avoid replacing default patterns."
+        },
+        "markJump.showProjectMarks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show project-wide marks on the status bar."
+        },
+        "markJump.includeFilePattern": {
+          "type": "string",
+          "default": "**/**",
+          "description": "Glob pattern for files to be included in project marks."
+        },
+        "markJump.excludeFilePattern": {
+          "type": "string",
+          "default": "**/node_modules/**",
+          "description": "Glob pattern for files to be excluded in project marks."
         },
         "markJump.highlightColor.dark": {
           "type": "string",
