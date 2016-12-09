@@ -133,8 +133,9 @@ class MarkJump {
             return;
         }
 
+        let editor = vscode.window.activeTextEditor;
         let marks = this.getMarks(
-            vscode.window.activeTextEditor, withProjectWide
+            editor, withProjectWide
         ).then(marks => {
             if(marks.length <= 0){
                 this.statusItem.hide();
@@ -185,7 +186,11 @@ class MarkJump {
                 );
             }
 
-            this.statusItem.tooltip = tooltips.join(", ");
+            this.statusItem.tooltip = `${
+                editor ? "" : "In this project: "
+            }${
+                tooltips.join(", ")
+            }`;
 
             this.statusItem.show();
         });
