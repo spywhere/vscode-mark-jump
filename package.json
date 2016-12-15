@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -76,6 +76,11 @@
       "type": "object",
       "title": "Mark Jump Configurations",
       "properties": {
+        "markJump.alwaysOpenDocument": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open and show a document according to the marks."
+        },
         "markJump.sectionPatterns": {
           "type": "array",
           "default": [

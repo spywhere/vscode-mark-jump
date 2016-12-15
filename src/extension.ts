@@ -259,6 +259,7 @@ class MarkJump {
             let highlightDecoration = vscode.window.createTextEditorDecorationType(
                 options
             );
+            let lastEditor: vscode.TextEditor = undefined;
             vscode.window.showQuickPick(marks.map(mark => {
                 let item: MarkQuickPickItem = {
                     range: mark.range,
@@ -296,13 +297,42 @@ class MarkJump {
                 matchOnDetail: true,
                 onDidSelectItem: (mark: MarkQuickPickItem) => {
                     if(!editor){
+                        if(!configurations.get<boolean>("alwaysOpenDocument")){
+                            return;
+                        }
+                        vscode.workspace.openTextDocument(
+                            mark.uri
+                        ).then(document => {
+                            return vscode.window.showTextDocument(
+                                document, undefined, true
+                            );
+                        }).then(editor => {
+                            if(lastEditor){
+                                lastEditor.setDecorations(
+                                    highlightDecoration, []
+                                );
+                            }
+                            editor.setDecorations(
+                                highlightDecoration, [mark.range]
+                            );
+                            this.revealMark(editor, mark);
+                            lastEditor = editor;
+                        });
                         return;
                     }
                     editor.setDecorations(highlightDecoration, [mark.range]);
                     this.revealMark(editor, mark);
                 }
             }).then(mark => {
+                if(lastEditor){
+                    lastEditor.setDecorations(
+                        highlightDecoration, []
+                    );
+                }
                 if(!editor){
+                    if(!mark){
+                        return;
+                    }
                     vscode.workspace.openTextDocument(
                         mark.uri
                     ).then(document => {
@@ -326,13 +356,14 @@ class MarkJump {
     ){
         if(!mark){
             editor.revealRange(
-                this.lastSelections[0], vscode.TextEditorRevealType.InCenter
+                this.lastSelections[0],
+                vscode.TextEditorRevealType.InCenterIfOutsideViewport
             );
             editor.selections = this.lastSelections;
             return;
         }
         editor.revealRange(
-            mark.range, vscode.TextEditorRevealType.InCenter
+            mark.range, vscode.TextEditorRevealType.InCenterIfOutsideViewport
         );
         editor.selection = new vscode.Selection(
             mark.range.end, mark.range.end
