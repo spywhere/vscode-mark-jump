@@ -293,6 +293,7 @@ class MarkJump {
 
                 return item;
             }), {
+                ignoreFocusOut: true,
                 matchOnDescription: true,
                 matchOnDetail: true,
                 onDidSelectItem: (mark: MarkQuickPickItem) => {
@@ -477,6 +478,9 @@ class MarkJump {
                 configurations.get<string>("includeFilePattern"),
                 configurations.get<string>("excludeFilePattern")
             ).then(urls => {
+                if (!urls) {
+                    return resolve([]);
+                }
                 let items: MarkItem[] = [];
                 urls.forEach(url => {
                     try{

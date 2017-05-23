@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
