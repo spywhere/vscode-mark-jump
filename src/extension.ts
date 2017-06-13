@@ -92,6 +92,7 @@ interface MarkItem {
     type: "section" | "todo" | "note";
     range: vscode.Range;
     uri: vscode.Uri;
+    heading?: string;
     writer?: string;
     description: string;
     lineNumber: number;
@@ -202,6 +203,19 @@ class MarkJump {
         );
     }
 
+    buildHeading(length: number, headingSymbol: string){
+        if (length <= 0 || !headingSymbol) {
+            return "";
+        }
+        let firstSymbol = headingSymbol.substr(0, 1);
+        let secondSymbol = headingSymbol.substr(1) || firstSymbol;
+        let padding = " ";
+        if (firstSymbol === " ") {
+            padding = "";
+        }
+        return `${firstSymbol}${ secondSymbol.repeat(length - 1) }${padding}`;
+    }
+
     jumpToEditorMark(
         editor?: vscode.TextEditor,
         withProjectWide: boolean = true,
@@ -225,21 +239,13 @@ class MarkJump {
                 isWholeLine: true
             };
 
-            let baseValue = configurations.get<string>(
-                "highlightColor"
-            );
             let darkValue = configurations.get<string>(
                 "highlightColor.dark"
             );
             let lightValue = configurations.get<string>(
                 "highlightColor.light"
             );
-            if(!baseValue){
-                baseValue = darkValue || lightValue;
-            }
 
-            options.backgroundColor = baseValue;
-            options.overviewRulerColor = baseValue;
             if(darkValue){
                 options.dark = {
                     backgroundColor: darkValue,
@@ -252,6 +258,8 @@ class MarkJump {
                     overviewRulerColor: lightValue
                 };
             }
+
+            let headingSymbol = configurations.get<string>("headingSymbol");
 
             if(editor){
                 this.lastSelections = editor.selections;
@@ -269,23 +277,35 @@ class MarkJump {
                 };
 
                 if(mark.type === "note"){
-                    item.label = `$(book) ${
+                    item.label = `${
+                        this.buildHeading(
+                            (mark.heading || "").length, headingSymbol
+                        )
+                    }$(book) ${
                         editor ? "" : `${path.basename(mark.uri.fsPath)} `
                     }on line ${mark.lineNumber + 1}`;
                     item.description = `NOTE: ${mark.description}` || "";
                     item.detail = (
-                        mark.writer ? ` by ${mark.writer}` : undefined
+                        mark.writer ? `by ${mark.writer}` : undefined
                     );
                 }else if(mark.type === "todo"){
-                    item.label = `$(pencil) ${
+                    item.label = `${
+                        this.buildHeading(
+                            (mark.heading || "").length, headingSymbol
+                        )
+                    }$(pencil) ${
                         editor ? "" : `${path.basename(mark.uri.fsPath)} `
                     }on line ${mark.lineNumber + 1}`;
                     item.description = `TODO: ${mark.description}` || "";
                     item.detail = (
-                        mark.writer ? ` by ${mark.writer}` : undefined
+                        mark.writer ? `by ${mark.writer}` : undefined
                     );
                 }else if(mark.type === "section"){
-                    item.label = `$(list-unordered) ${mark.description}` || "";
+                    item.label = `${
+                        this.buildHeading(
+                            (mark.heading || "").length, headingSymbol
+                        )
+                    }$(list-unordered) ${mark.description}` || "";
                     item.detail = `${
                         editor ? "" : `${path.basename(mark.uri.fsPath)} `
                     }on line ${mark.lineNumber + 1}`;
@@ -528,6 +548,7 @@ class SectionFilter implements MarkFilter {
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
+                heading: matches["heading"],
                 description: matches["description"],
                 lineNumber: lineNumber
             };
@@ -564,6 +585,7 @@ class TODOFilter implements MarkFilter {
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
+                heading: matches["heading"],
                 description: matches["description"],
                 writer: matches["writer"],
                 lineNumber: lineNumber
@@ -601,6 +623,7 @@ class NoteFilter implements MarkFilter {
                 range: new vscode.Range(
                     lineNumber, 0, lineNumber, lineText.length
                 ),
+                heading: matches["heading"],
                 description: matches["description"],
                 writer: matches["writer"],
                 lineNumber: lineNumber

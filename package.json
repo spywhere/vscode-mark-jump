@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -89,11 +89,16 @@
           "default": true,
           "description": "Automatically open and show a document according to the marks."
         },
+        "markJump.headingSymbol": {
+          "type": "string",
+          "default": "└─",
+          "description": "Heading symbol to indicate multiple level of marks."
+        },
         "markJump.sectionPatterns": {
           "type": "array",
           "default": [
-            "//\\s*[Mm][Aa][Rr][Kk]\\s*:\\s*(?<description>.+)$",
-            "#\\s*pragma\\s+(?<description>.+)$"
+            "//\\s*(?<heading>\\>+)?\\s*[Mm][Aa][Rr][Kk]\\s*:\\s*(?<description>.+)$",
+            "#\\s*(?<heading>\\>+)?\\s*pragma\\s+(?<description>.+)$"
           ],
           "items": {
             "type": "string"
@@ -111,8 +116,8 @@
         "markJump.todoPatterns": {
           "type": "array",
           "default": [
-            "//\\s*[Tt][Oo][Dd][Oo]\\s*(\\((?<writer>[^\\)]+)\\))?\\s*:\\s*(?<description>.+)$",
-            "//\\s*[Ff][Ii][Xx][Mm][Ee]\\s*(\\((?<writer>[^\\)]+)\\))?\\s*:\\s*(?<description>.+)$"
+            "//\\s*(?<heading>\\>+)?\\s*[Tt][Oo][Dd][Oo]\\s*(\\((?<writer>[^\\)]+)\\))?\\s*:\\s*(?<description>.+)$",
+            "//\\s*(?<heading>\\>+)?\\s*[Ff][Ii][Xx][Mm][Ee]\\s*(\\((?<writer>[^\\)]+)\\))?\\s*:\\s*(?<description>.+)$"
           ],
           "items": {
             "type": "string"
@@ -130,7 +135,7 @@
         "markJump.notePatterns": {
           "type": "array",
           "default": [
-            "//\\s*[Nn][Oo][Tt][Ee]\\s*(\\((?<writer>[^\\)]+)\\))?\\s*:\\s*(?<description>.+)$"
+            "//\\s*(?<heading>\\>+)?\\s*[Nn][Oo][Tt][Ee]\\s*(\\((?<writer>[^\\)]+)\\))?\\s*:\\s*(?<description>.+)$"
           ],
           "items": {
             "type": "string"
