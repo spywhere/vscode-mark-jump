@@ -305,7 +305,10 @@ class MarkJump {
                             mark.uri
                         ).then(document => {
                             return vscode.window.showTextDocument(
-                                document, undefined, true
+                                document, {
+                                    preserveFocus: true,
+                                    preview: true
+                                }
                             );
                         }).then(editor => {
                             if(lastEditor){

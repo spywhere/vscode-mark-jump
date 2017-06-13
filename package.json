@@ -21,7 +21,7 @@
     "url": "https://github.com/spywhere/vscode-mark-jump.git"
   },
   "engines": {
-    "vscode": "^1.5.0"
+    "vscode": "^1.12.0"
   },
   "categories": [
     "Other"
@@ -35,16 +35,20 @@
       {
         "command": "markJump.jumpToProjectMark",
         "title": "Mark Jump: Jump to Project-wide Marks..."
-      }, {
+      },
+      {
         "command": "markJump.jumpToMark",
         "title": "Mark Jump: Jump to Marks..."
-      }, {
+      },
+      {
         "command": "markJump.jumpToSection",
         "title": "Mark Jump: Jump to Sections..."
-      }, {
+      },
+      {
         "command": "markJump.jumpToTODO",
         "title": "Mark Jump: Jump to TODOs..."
-      }, {
+      },
+      {
         "command": "markJump.jumpToNote",
         "title": "Mark Jump: Jump to Notes..."
       }
@@ -54,19 +58,23 @@
         "command": "markJump.jumpToProjectMark",
         "key": "ctrl+alt+p",
         "mac": "ctrl+cmd+p"
-      }, {
+      },
+      {
         "command": "markJump.jumpToMark",
         "key": "ctrl+alt+m",
         "mac": "ctrl+cmd+m"
-      }, {
+      },
+      {
         "command": "markJump.jumpToSection",
         "key": "ctrl+alt+s",
         "mac": "ctrl+cmd+s"
-      }, {
+      },
+      {
         "command": "markJump.jumpToTODO",
         "key": "ctrl+alt+t",
         "mac": "ctrl+cmd+t"
-      }, {
+      },
+      {
         "command": "markJump.jumpToNote",
         "key": "ctrl+alt+n",
         "mac": "ctrl+cmd+n"
@@ -179,9 +187,9 @@
     "@types/node": "^6.0.40",
     "@types/xregexp": "^3.0.28",
     "typescript": "^2.0.3",
-    "vscode": "^1.0.0"
+    "vscode": "^1.1.0"
   },
   "dependencies": {
-    "xregexp": "^3.1.1"
+    "xregexp": "^3.2.0"
   }
 }
