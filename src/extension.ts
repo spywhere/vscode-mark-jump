@@ -313,7 +313,7 @@ class MarkJump {
 
                 return item;
             }), {
-                ignoreFocusOut: true,
+                ignoreFocusOut: false,
                 matchOnDescription: true,
                 matchOnDetail: true,
                 onDidSelectItem: (mark: MarkQuickPickItem) => {
