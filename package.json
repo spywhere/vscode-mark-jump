@@ -91,7 +91,7 @@
         },
         "markJump.headingSymbol": {
           "type": "string",
-          "default": "└─",
+          "default": "\u2514\u2500",
           "description": "Heading symbol to indicate multiple level of marks."
         },
         "markJump.sectionPatterns": {
