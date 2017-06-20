@@ -281,32 +281,36 @@ class MarkJump {
                         this.buildHeading(
                             (mark.heading || "").length, headingSymbol
                         )
-                    }$(book) ${
-                        editor ? "" : `${path.basename(mark.uri.fsPath)} `
-                    }on line ${mark.lineNumber + 1}`;
-                    item.description = `NOTE: ${mark.description}` || "";
+                    }$(book) NOTE: ${mark.description}` || "";
+
                     item.detail = (
                         mark.writer ? `by ${mark.writer}` : undefined
                     );
+
+                    item.description = `${
+                        editor ? "" : `${path.basename(mark.uri.fsPath)} `
+                    }on line ${mark.lineNumber + 1}`;
                 }else if(mark.type === "todo"){
                     item.label = `${
                         this.buildHeading(
                             (mark.heading || "").length, headingSymbol
                         )
-                    }$(pencil) ${
-                        editor ? "" : `${path.basename(mark.uri.fsPath)} `
-                    }on line ${mark.lineNumber + 1}`;
-                    item.description = `TODO: ${mark.description}` || "";
+                    }$(pencil) TODO: ${mark.description}` || "";
+
                     item.detail = (
                         mark.writer ? `by ${mark.writer}` : undefined
                     );
+
+                    item.description = `${
+                        editor ? "" : `${path.basename(mark.uri.fsPath)} `
+                    }on line ${mark.lineNumber + 1}`;
                 }else if(mark.type === "section"){
                     item.label = `${
                         this.buildHeading(
                             (mark.heading || "").length, headingSymbol
                         )
                     }$(list-unordered) ${mark.description}` || "";
-                    item.detail = `${
+                    item.description = `${
                         editor ? "" : `${path.basename(mark.uri.fsPath)} `
                     }on line ${mark.lineNumber + 1}`;
                 }
