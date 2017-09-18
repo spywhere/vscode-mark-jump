@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -55,29 +55,44 @@
     ],
     "keybindings": [
       {
-        "command": "markJump.jumpToProjectMark",
+        "command": "markJump.jumpToProjectMarks",
         "key": "ctrl+alt+p",
         "mac": "ctrl+cmd+p"
       },
       {
-        "command": "markJump.jumpToMark",
+        "command": "markJump.jumpToMarks",
         "key": "ctrl+alt+m",
         "mac": "ctrl+cmd+m"
       },
       {
-        "command": "markJump.jumpToSection",
+        "command": "markJump.jumpToEditorMarks.section",
+        "when": "editorTextFocus",
         "key": "ctrl+alt+s",
         "mac": "ctrl+cmd+s"
       },
       {
-        "command": "markJump.jumpToTODO",
+        "command": "markJump.jumpToEditorMarks.todo",
+        "when": "editorTextFocus",
         "key": "ctrl+alt+t",
         "mac": "ctrl+cmd+t"
       },
       {
-        "command": "markJump.jumpToNote",
+        "command": "markJump.jumpToEditorMarks.note",
+        "when": "editorTextFocus",
         "key": "ctrl+alt+n",
         "mac": "ctrl+cmd+n"
+      },
+      {
+        "command": "markJump.jumpToPreviousMark",
+        "when": "editorTextFocus",
+        "key": "ctrl+alt+,",
+        "mac": "ctrl+cmd+,"
+      },
+      {
+        "command": "markJump.jumpToNextMark",
+        "when": "editorTextFocus",
+        "key": "ctrl+alt+.",
+        "mac": "ctrl+cmd+."
       }
     ],
     "configuration": {
@@ -192,7 +207,7 @@
     "@types/node": "^6.0.40",
     "@types/xregexp": "^3.0.28",
     "typescript": "^2.0.3",
-    "vscode": "^1.1.0"
+    "vscode": "^1.1.5"
   },
   "dependencies": {
     "xregexp": "^3.2.0"

@@ -20,31 +20,61 @@ class MarkJumpController {
 
         let subscriptions: vscode.Disposable[] = [];
         subscriptions.push(vscode.commands.registerCommand(
-            "markJump.jumpToProjectMark", () => {
-                this.markJump.jumpToEditorMark();
+            "markJump.jumpToProjectMarks", () => {
+                this.markJump.jumpToEditorMark(
+                    undefined, undefined, "section", "todo", "note"
+                );
             }
         ));
         subscriptions.push(vscode.commands.registerCommand(
-            "markJump.jumpToMark", () => {
-                this.markJump.jumpToMark();
+            "markJump.jumpToMarks", () => {
+                this.markJump.jumpToMark(true, "section", "todo", "note");
             }
         ));
         subscriptions.push(vscode.commands.registerCommand(
-            "markJump.jumpToSection", () => {
-                this.markJump.jumpToMark(true, "section");
+            "markJump.jumpToEditorMarks", () => {
+                this.markJump.jumpToMark(false, "section", "todo", "note");
             }
         ));
         subscriptions.push(vscode.commands.registerCommand(
-            "markJump.jumpToTODO", () => {
-                this.markJump.jumpToMark(true, "todo");
+            "markJump.jumpToPreviousMark", () => {
+                this.markJump.jumpToPreviousMark("section", "todo", "note");
             }
         ));
         subscriptions.push(vscode.commands.registerCommand(
-            "markJump.jumpToNote", () => {
-                this.markJump.jumpToMark(true, "note");
+            "markJump.jumpToNextMark", () => {
+                this.markJump.jumpToNextMark("section", "todo", "note");
             }
         ));
-
+        ["section", "todo", "note"].forEach((type) => {
+            subscriptions.push(vscode.commands.registerCommand(
+                `markJump.jumpToProjectMarks.${ type }`, () => {
+                    this.markJump.jumpToEditorMark(
+                        undefined, undefined, type
+                    );
+                }
+            ));
+            subscriptions.push(vscode.commands.registerCommand(
+                `markJump.jumpToMarks.${ type }`, () => {
+                    this.markJump.jumpToMark(true, type);
+                }
+            ));
+            subscriptions.push(vscode.commands.registerCommand(
+                `markJump.jumpToEditorMarks.${ type }`, () => {
+                    this.markJump.jumpToMark(false, type);
+                }
+            ));
+            subscriptions.push(vscode.commands.registerCommand(
+                `markJump.jumpToPreviousMark.${ type }`, () => {
+                    this.markJump.jumpToPreviousMark(type);
+                }
+            ));
+            subscriptions.push(vscode.commands.registerCommand(
+                `markJump.jumpToNextMark.${ type }`, () => {
+                    this.markJump.jumpToNextMark(type);
+                }
+            ));
+        });
         this.markJump.createStatusBar();
         vscode.workspace.onDidOpenTextDocument(document => {
             this.markJump.updateStatusBar(false);
@@ -83,15 +113,15 @@ class MarkJumpController {
     }
 }
 
-interface MarkQuickPickItem extends vscode.QuickPickItem {
+interface BaseMarkItem {
     range: vscode.Range;
     uri: vscode.Uri;
 }
 
-interface MarkItem {
+interface MarkQuickPickItem extends vscode.QuickPickItem, BaseMarkItem {}
+
+interface MarkItem extends BaseMarkItem {
     type: "section" | "todo" | "note";
-    range: vscode.Range;
-    uri: vscode.Uri;
     heading?: string;
     writer?: string;
     description: string;
@@ -118,7 +148,7 @@ class MarkJump {
         this.statusItem = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Left, 10
         );
-        this.statusItem.command = "markJump.jumpToMark";
+        this.statusItem.command = "markJump.jumpToMarks";
         this.statusItem.hide();
         this.updateStatusBar();
     }
@@ -136,7 +166,7 @@ class MarkJump {
 
         let editor = vscode.window.activeTextEditor;
         let marks = this.getMarks(
-            editor, withProjectWide
+            editor, undefined, withProjectWide
         ).then(marks => {
             if(marks.length <= 0){
                 this.statusItem.hide();
@@ -197,6 +227,54 @@ class MarkJump {
         });
     }
 
+    jumpToPreviousMark(...filters: string[]){
+        let editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+        this.getMarks(editor, {
+            offset: editor.selection.active.line - 1,
+            limit: -1
+        }, false, ...filters).then(marks => {
+            if (marks.length > 0) {
+                return Promise.resolve(marks);
+            }
+            return this.getMarks(editor, {
+                offset: editor.document.lineCount - 1,
+                limit: -1
+            }, false, ...filters);
+        }).then(marks => {
+            if (marks.length <= 0) {
+                return;
+            }
+            this.revealMark(editor, marks[0]);
+        });
+    }
+
+    jumpToNextMark(...filters: string[]){
+        let editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+        this.getMarks(editor, {
+            offset: editor.selection.active.line + 1,
+            limit: 1
+        }, false, ...filters).then(marks => {
+            if (marks.length > 0) {
+                return Promise.resolve(marks);
+            }
+            return this.getMarks(editor, {
+                offset: 0,
+                limit: 1
+            }, false, ...filters);
+        }).then(marks => {
+            if (marks.length <= 0) {
+                return;
+            }
+            this.revealMark(editor, marks[0]);
+        });
+    }
+
     jumpToMark(withProjectWide: boolean = true, ...filters: string[]){
         this.jumpToEditorMark(
             vscode.window.activeTextEditor, withProjectWide, ...filters
@@ -222,7 +300,7 @@ class MarkJump {
         ...filters: string[]
     ){
         let configurations = vscode.workspace.getConfiguration("markJump");
-        this.getMarks(editor, withProjectWide, ...filters)
+        this.getMarks(editor, undefined, withProjectWide, ...filters)
         .then(marks => {
             if(marks.length <= 0){
                 if(filters.length === 1 && filters.indexOf("todo") >= 0){
@@ -272,7 +350,7 @@ class MarkJump {
                 let item: MarkQuickPickItem = {
                     range: mark.range,
                     uri: mark.uri,
-                    label: undefined,
+                    label: "",
                     description: undefined
                 };
 
@@ -320,7 +398,7 @@ class MarkJump {
                 ignoreFocusOut: false,
                 matchOnDescription: true,
                 matchOnDetail: true,
-                onDidSelectItem: (mark: MarkQuickPickItem) => {
+                onDidSelectItem: <MarkQuickPickItem>(mark) => {
                     if(!editor){
                         if(!configurations.get<boolean>("alwaysOpenDocument")){
                             return;
@@ -380,7 +458,7 @@ class MarkJump {
 
     revealMark(
         editor: vscode.TextEditor,
-        mark?: MarkQuickPickItem
+        mark?: BaseMarkItem
     ){
         if(!mark){
             editor.revealRange(
@@ -400,6 +478,10 @@ class MarkJump {
 
     getMarks(
         editor?: vscode.TextEditor,
+        options?: {
+            offset: number;
+            limit: number;
+        },
         withProjectWide: boolean = true,
         ...filterKeys: string[]
     ){
@@ -431,44 +513,71 @@ class MarkJump {
             }
 
             if(editor){
-                return this.getEditorMarks(editor, ...filters).then(marks => {
-                    resolve(marks);
-                });
+                return this.getEditorMarks(editor, options, ...filters).then(
+                    resolve.bind(this)
+                );
             }else if(
                 withProjectWide &&
                 configurations.get<boolean>("showProjectMarks")
             ){
-                return this.getWorkspaceMarks(...filters).then(marks => {
-                    resolve(marks);
-                });
+                return this.getWorkspaceMarks(...filters).then(
+                    resolve.bind(this)
+                );
             }
 
             resolve([]);
         });
-
     }
 
-    getEditorMarks(editor: vscode.TextEditor, ...filters: MarkFilter[]){
+    getEditorMarks(
+        editor: vscode.TextEditor,
+        options?: {
+            offset: number;
+            limit: number;
+        },
+        ...filters: MarkFilter[]
+    ){
         return new Promise<MarkItem[]>((resolve, reject) => {
             let items: MarkItem[] = [];
             let lineCount = editor.document.lineCount;
-            for(let lineNumber = 0; lineNumber < lineCount; lineNumber += 1){
+
+            let limit: number | undefined = options ? options.limit : undefined;
+            let direction = limit === undefined || limit > 0 ? "down" : "up";
+            let lineNumber = options ? options.offset : (
+                direction === "down" ? 0 : lineCount - 1
+            );
+            while (lineNumber >= 0 && lineNumber < lineCount) {
                 let lineText = editor.document.lineAt(lineNumber).text;
                 let filter = filters.find(
                     filter => filter.test(lineText)
                 );
                 if(!filter){
+                    if (direction === "down") {
+                        lineNumber += 1;
+                    } else {
+                        lineNumber -= 1;
+                    }
                     continue;
                 }
                 let item = filter.getItem(
                     editor.document.uri, lineNumber, lineText
                 );
                 if(!item){
+                    if (direction === "down") {
+                        lineNumber += 1;
+                    } else {
+                        lineNumber -= 1;
+                    }
                     continue;
                 }
                 items.push(item);
-            }
 
+                if (direction === "down") {
+                    lineNumber += 1;
+                } else {
+                    lineNumber -= 1;
+                }
+            }
             resolve(items);
         });
     }
