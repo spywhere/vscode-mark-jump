@@ -7,6 +7,9 @@ import * as path from "path";
 export function activate(context: vscode.ExtensionContext) {
     let markJump = new MarkJump();
     context.subscriptions.push(markJump);
+    context.subscriptions.push(vscode.window.registerTreeDataProvider(
+        "markJump", new MarkJumpTreeProvider(markJump, context)
+    ));
     context.subscriptions.push(new MarkJumpController(markJump));
 }
 
@@ -75,6 +78,11 @@ class MarkJumpController {
                 }
             ));
         });
+        subscriptions.push(vscode.commands.registerCommand(
+            "markJump.revealMark", (mark: BaseMarkItem) => {
+                this.markJump.openAndRevealMark(mark);
+            }
+        ));
         this.markJump.createStatusBar();
         vscode.workspace.onDidOpenTextDocument(document => {
             this.markJump.updateStatusBar(false);
@@ -110,6 +118,53 @@ class MarkJumpController {
 
     dispose(){
         this.disposable.dispose();
+    }
+}
+
+class MarkJumpTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    private markJump: MarkJump;
+    private context: vscode.ExtensionContext;
+
+    constructor(markJump: MarkJump, context: vscode.ExtensionContext){
+        this.markJump = markJump;
+        this.context = context;
+    }
+
+    getTreeItem(element: vscode.TreeItem){
+        return element;
+    }
+
+    getChildren(element?: vscode.TreeItem) {
+        return this.markJump.getMarks(
+            vscode.window.activeTextEditor, undefined, true
+        ).then(marks => {
+            return marks.map<vscode.TreeItem>(mark => {
+                let type = "";
+                if (mark.type === "note") {
+                    type = "book";
+                } else if (mark.type === "todo") {
+                    type = "pencil";
+                } else if (mark.type === "section") {
+                    type = "list-unordered";
+                }
+                return {
+                    command: {
+                        title: "Reveal",
+                        command: "markJump.revealMark",
+                        arguments: [mark]
+                    },
+                    label: `${ mark.description }`,
+                    iconPath: {
+                        light: this.context.asAbsolutePath(
+                            `./images/octicons/light/${ type }.svg`
+                        ),
+                        dark: this.context.asAbsolutePath(
+                            `./images/octicons/dark/${ type }.svg`
+                        )
+                    }
+                }
+            });
+        });
     }
 }
 
@@ -436,16 +491,7 @@ class MarkJump {
                     );
                 }
                 if(!editor){
-                    if(!mark){
-                        return;
-                    }
-                    vscode.workspace.openTextDocument(
-                        mark.uri
-                    ).then(document => {
-                        return vscode.window.showTextDocument(document);
-                    }).then(editor => {
-                        this.revealMark(editor, mark);
-                    });
+                    this.openAndRevealMark(mark);
                     return;
                 }
 
@@ -454,6 +500,19 @@ class MarkJump {
                 highlightDecoration.dispose();
             });
         });
+    }
+
+    openAndRevealMark(mark: BaseMarkItem){
+        let editor = vscode.window.visibleTextEditors.find((editor) => (
+            editor.document.uri.toString() === mark.uri.toString()
+        ));
+        (
+            editor ?
+            Promise.resolve(editor.document) :
+            vscode.workspace.openTextDocument(mark.uri)
+        ).then((document) => vscode.window.showTextDocument(document, {
+            preview: false
+        })).then((editor) => this.revealMark(editor, mark));
     }
 
     revealMark(

@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -21,7 +21,7 @@
     "url": "https://github.com/spywhere/vscode-mark-jump.git"
   },
   "engines": {
-    "vscode": "^1.12.0"
+    "vscode": "^1.13.0"
   },
   "categories": [
     "Other"
@@ -31,6 +31,15 @@
   ],
   "main": "./out/extension",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "markJump",
+          "name": "Mark Jump",
+          "when": "config.markJump.showExplorerView == true"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "markJump.jumpToProjectMark",
@@ -194,6 +203,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show numbers of marks in the status bar."
+        },
+        "markJump.showExplorerView": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show marks in the explorer viewlet."
         }
       }
     }
