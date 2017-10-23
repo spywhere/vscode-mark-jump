@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -42,7 +42,7 @@
     },
     "commands": [
       {
-        "command": "markJump.jumpToProjectMark",
+        "command": "markJump.jumpToProjectMarks",
         "title": "Mark Jump: Jump to Project-wide Marks..."
       },
       {
@@ -181,7 +181,7 @@
         },
         "markJump.includeFilePattern": {
           "type": "string",
-          "default": "**/**",
+          "default": "**/**.*",
           "description": "Glob pattern for files to be included in project marks."
         },
         "markJump.excludeFilePattern": {
