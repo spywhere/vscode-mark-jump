@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -21,7 +21,7 @@
     "url": "https://github.com/spywhere/vscode-mark-jump.git"
   },
   "engines": {
-    "vscode": "^1.13.0"
+    "vscode": "^1.17.0"
   },
   "categories": [
     "Other"
@@ -111,12 +111,14 @@
         "markJump.alwaysOpenDocument": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically open and show a document according to the marks."
+          "description": "Automatically open and show a document according to the marks.",
+          "scope": "window"
         },
         "markJump.headingSymbol": {
           "type": "string",
           "default": "\u2514\u2500",
-          "description": "Heading symbol to indicate multiple level of marks."
+          "description": "Heading symbol to indicate multiple level of marks.",
+          "scope": "window"
         },
         "markJump.sectionPatterns": {
           "type": "array",
@@ -127,7 +129,8 @@
           "items": {
             "type": "string"
           },
-          "description": "A list of regular patterns to match the section."
+          "description": "A list of regular patterns to match the section.",
+          "scope": "window"
         },
         "markJump.additionalSectionPatterns": {
           "type": "array",
@@ -135,7 +138,8 @@
           "items": {
             "type": "string"
           },
-          "description": "Additional list of regular pattern to match the section. Use this configuration to avoid replacing default patterns."
+          "description": "Additional list of regular pattern to match the section. Use this configuration to avoid replacing default patterns.",
+          "scope": "window"
         },
         "markJump.todoPatterns": {
           "type": "array",
@@ -146,7 +150,8 @@
           "items": {
             "type": "string"
           },
-          "description": "A list of regular pattern to match the TODOs."
+          "description": "A list of regular pattern to match the TODOs.",
+          "scope": "window"
         },
         "markJump.additionalTODOPatterns": {
           "type": "array",
@@ -154,7 +159,8 @@
           "items": {
             "type": "string"
           },
-          "description": "Additional list of regular pattern to match the TODOs. Use this configuration to avoid replacing default patterns."
+          "description": "Additional list of regular pattern to match the TODOs. Use this configuration to avoid replacing default patterns.",
+          "scope": "window"
         },
         "markJump.notePatterns": {
           "type": "array",
@@ -164,7 +170,8 @@
           "items": {
             "type": "string"
           },
-          "description": "A list of regular pattern to match the notes."
+          "description": "A list of regular pattern to match the notes.",
+          "scope": "window"
         },
         "markJump.additionalNotePatterns": {
           "type": "array",
@@ -172,42 +179,56 @@
           "items": {
             "type": "string"
           },
-          "description": "Additional list of regular pattern to match the notes. Use this configuration to avoid replacing default patterns."
+          "description": "Additional list of regular pattern to match the notes. Use this configuration to avoid replacing default patterns.",
+          "scope": "window"
         },
         "markJump.showProjectMarks": {
           "type": "boolean",
           "default": true,
-          "description": "Show project-wide marks on the status bar."
+          "description": "Show project-wide marks on the status bar.",
+          "scope": "window"
         },
         "markJump.includeFilePattern": {
           "type": "string",
           "default": "**/*",
-          "description": "Glob pattern for files to be included in project marks."
+          "description": "Glob pattern for files to be included in project marks.",
+          "scope": "window"
         },
         "markJump.excludeFilePattern": {
           "type": "string",
           "default": "**/node_modules/**",
-          "description": "Glob pattern for files to be excluded in project marks."
+          "description": "Glob pattern for files to be excluded in project marks.",
+          "scope": "window"
         },
         "markJump.highlightColor.dark": {
           "type": "string",
           "default": "rgba(60, 60, 60, 0.75)",
-          "description": "Highlight rendering color for dark themes."
+          "description": "Highlight rendering color for dark themes.",
+          "scope": "window"
         },
         "markJump.highlightColor.light": {
           "type": "string",
           "default": "rgba(220, 220, 220, 0.75)",
-          "description": "Highlight rendering color for light themes."
+          "description": "Highlight rendering color for light themes.",
+          "scope": "window"
         },
         "markJump.showStatusItem": {
           "type": "boolean",
           "default": true,
-          "description": "Show numbers of marks in the status bar."
+          "description": "Show numbers of marks in the status bar.",
+          "scope": "window"
         },
         "markJump.showExplorerView": {
           "type": "boolean",
           "default": true,
-          "description": "Show marks in the explorer viewlet."
+          "description": "Show marks in the explorer viewlet.",
+          "scope": "window"
+        },
+        "markJump.maximumLimit": {
+          "type": "number",
+          "default": 30,
+          "description": "Show warning when a number of matched files exceed this limit. Set to -1 for unlimited.",
+          "scope": "window"
         }
       }
     }
@@ -218,10 +239,10 @@
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "devDependencies": {
-    "@types/node": "^6.0.40",
-    "@types/xregexp": "^3.0.28",
-    "typescript": "^2.0.3",
-    "vscode": "^1.1.5"
+    "@types/node": "^8.0.53",
+    "@types/xregexp": "^3.0.29",
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.7"
   },
   "dependencies": {
     "xregexp": "^3.2.0"

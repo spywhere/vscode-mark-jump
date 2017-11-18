@@ -13,6 +13,15 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(new MarkJumpController(markJump));
 }
 
+interface ActionItem extends vscode.MessageItem {
+    danger?: {
+        title: string;
+        action: string;
+        cancel: string;
+    };
+    action?: () => (Thenable<void> | number);
+}
+
 class MarkJumpController {
     private markJump: MarkJump;
     private disposable: vscode.Disposable;
@@ -195,6 +204,8 @@ interface MarkFilter {
 class MarkJump {
     lastSelections: vscode.Selection[];
     statusItem: vscode.StatusBarItem;
+    useLimit = -1;
+    private lastWarning: number = Date.now() - 10000;
 
     createStatusBar(){
         if(this.statusItem){
@@ -674,6 +685,117 @@ class MarkJump {
                 configurations.get<string>("excludeFilePattern")
             ).then(urls => {
                 if (!urls) {
+                    return Promise.resolve([] as vscode.Uri[]);
+                }
+                let limit = configurations.get<number>("maximumLimit");
+
+                if (limit < 0 || urls.length <= limit) {
+                    return Promise.resolve(urls);
+                }
+
+                if (this.useLimit > 0) {
+                    return Promise.resolve(urls.slice(0, limit));
+                } else if (this.useLimit === 0) {
+                    return Promise.resolve([] as vscode.Uri[]);
+                }
+
+                if (Date.now() - this.lastWarning < 5000) {
+                    return Promise.resolve([] as vscode.Uri[]);
+                }
+
+                return vscode.window.showWarningMessage<ActionItem>(
+                    `Mark Jump is going to run through ${
+                        urls.length
+                    } files, but the limit has set to ${
+                        limit
+                    }.`,
+                    {
+                        title: `Use ${ limit } for now`,
+                        action: () => limit,
+                        isCloseAffordance: true
+                    }, {
+                        title: `Set to ${ urls.length }`,
+                        action: () => configurations.update(
+                            "maximumLimit",
+                            urls.length,
+                            vscode.ConfigurationTarget.Global
+                        ),
+                        isCloseAffordance: true
+                    }, {
+                        title: `Set to unlimited`,
+                        danger: {
+                            title: "Increase the limit to unlimited? This could impact the editor's performance a lot.",
+                            action: "Yes, increase to unlimited",
+                            cancel: "Cancel"
+                        },
+                        action: () => configurations.update(
+                            "maximumLimit",
+                            -1,
+                            vscode.ConfigurationTarget.Global
+                        ),
+                        isCloseAffordance: true
+                    }, {
+                        title: `Disable for now`,
+                        action: () => 0,
+                        isCloseAffordance: true
+                    }, {
+                        title: `Close`,
+                        isCloseAffordance: true
+                    }
+                ).then((action) => {
+                    if (!action) {
+                        this.lastWarning = Date.now();
+                        return Promise.resolve([] as vscode.Uri[]);
+                    }
+
+                    if (!action.danger) {
+                        this.lastWarning = Date.now();
+                        if (action.action) {
+                            let result = action.action();
+                            if (typeof(result) === "number") {
+                                this.useLimit = result;
+                                return Promise.resolve(urls.slice(0, result));
+                            } else {
+                                return result.then(
+                                    () => Promise.resolve(urls)
+                                );
+                            }
+                        } else {
+                            return Promise.resolve([] as vscode.Uri[]);
+                        }
+                    }
+                    let danger = action.danger;
+                    return vscode.window.showWarningMessage<ActionItem>(
+                        danger.title, {
+                            title: danger.action,
+                            action: action.action,
+                            isCloseAffordance: true
+                        }, {
+                            title: danger.cancel,
+                            isCloseAffordance: true
+                        }
+                    ).then((action) => {
+                        this.lastWarning = Date.now();
+                        if (!action) {
+                            return Promise.resolve([] as vscode.Uri[]);
+                        }
+                        if (action.action) {
+                            let result = action.action();
+                            if (typeof(result) === "number") {
+                                this.useLimit = result;
+                                return Promise.resolve(urls.slice(0, result));
+                            } else {
+                                return result.then(
+                                    () => Promise.resolve(urls)
+                                );
+                            }
+                        } else {
+                            return Promise.resolve([] as vscode.Uri[]);
+                        }
+                    });
+                });
+            }).then((urls) => {
+                if (urls.length === 0) {
                     return resolve([]);
                 }
                 let items: MarkItem[] = [];
