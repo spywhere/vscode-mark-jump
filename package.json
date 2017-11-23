@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -228,6 +228,17 @@
           "type": "number",
           "default": 30,
           "description": "Show warning when a number of matched files exceed this limit. Set to -1 for unlimited.",
+          "scope": "window"
+        },
+        "markJump.strictLimit": {
+          "type": "string",
+          "default": "none",
+          "description": "Keep the maximum limit as is.\n- \"none\" to show warnings and suggestions\n- \"disable\" to disable\n- \"limit\" to limit to the specified limit.",
+          "enum": [
+            "none",
+            "disable",
+            "limit"
+          ],
           "scope": "window"
         }
       }

@@ -688,14 +688,15 @@ class MarkJump {
                     return Promise.resolve([] as vscode.Uri[]);
                 }
                 let limit = configurations.get<number>("maximumLimit");
+                let strictLimit = configurations.get<string>("strictLimit");
 
                 if (limit < 0 || urls.length <= limit) {
                     return Promise.resolve(urls);
                 }
 
-                if (this.useLimit > 0) {
+                if (strictLimit === "limit" || this.useLimit > 0) {
                     return Promise.resolve(urls.slice(0, limit));
-                } else if (this.useLimit === 0) {
+                } else if (strictLimit === "disable" || this.useLimit === 0) {
                     return Promise.resolve([] as vscode.Uri[]);
                 }
 
