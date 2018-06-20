@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -116,8 +116,38 @@
         },
         "markJump.headingSymbol": {
           "type": "string",
-          "default": "\u2514\u2500",
+          "default": "└─",
           "description": "Heading symbol to indicate multiple level of marks.",
+          "scope": "window"
+        },
+        "markJump.testPatterns": {
+          "type": "array",
+          "default": [
+            "//\\s*(\\>+)?\\s*[Mm][Aa][Rr][Kk]",
+            "#\\s*(\\>+)?\\s*pragma",
+            "//\\s*(\\>+)?\\s*[Tt][Oo][Dd][Oo]",
+            "//\\s*(\\>+)?\\s*[Ff][Ii][Xx][Mm][Ee]",
+            "//\\s*(\\>+)?\\s*[Nn][Oo][Tt][Ee]"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of regular patterns to test the file (when match, the whole file will be inspected).",
+          "scope": "window"
+        },
+        "markJump.additionalTestPatterns": {
+          "type": "array",
+          "default": [
+            "//\\s*(\\>+)?\\s*[Mm][Aa][Rr][Kk]",
+            "#\\s*(\\>+)?\\s*pragma",
+            "//\\s*(\\>+)?\\s*[Tt][Oo][Dd][Oo]",
+            "//\\s*(\\>+)?\\s*[Ff][Ii][Xx][Mm][Ee]",
+            "//\\s*(\\>+)?\\s*[Nn][Oo][Tt][Ee]"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Additional list of regular patterns to test the file. Use this configuration to avoid replacing default patterns.",
           "scope": "window"
         },
         "markJump.sectionPatterns": {

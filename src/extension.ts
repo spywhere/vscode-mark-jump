@@ -6,11 +6,12 @@ import * as path from "path";
 
 export function activate(context: vscode.ExtensionContext) {
     let markJump = new MarkJump();
+    let treeProvider = new MarkJumpTreeProvider(markJump, context);
     context.subscriptions.push(markJump);
     context.subscriptions.push(vscode.window.registerTreeDataProvider(
-        "markJump", new MarkJumpTreeProvider(markJump, context)
+        "markJump", treeProvider
     ));
-    context.subscriptions.push(new MarkJumpController(markJump));
+    context.subscriptions.push(new MarkJumpController(markJump, treeProvider));
 }
 
 interface ActionItem extends vscode.MessageItem {
@@ -24,11 +25,13 @@ interface ActionItem extends vscode.MessageItem {
 
 class MarkJumpController {
     private markJump: MarkJump;
+    private treeProvider: MarkJumpTreeProvider;
     private disposable: vscode.Disposable;
     private lastLine: number = undefined;
 
-    constructor(markJump: MarkJump){
+    constructor(markJump: MarkJump, treeProvider: MarkJumpTreeProvider){
         this.markJump = markJump;
+        this.treeProvider = treeProvider;
 
         let subscriptions: vscode.Disposable[] = [];
         subscriptions.push(vscode.commands.registerCommand(
@@ -95,21 +98,26 @@ class MarkJumpController {
         this.markJump.createStatusBar();
         vscode.workspace.onDidOpenTextDocument(document => {
             this.markJump.updateStatusBar(false);
+            this.treeProvider.refresh();
         }, this, subscriptions);
         vscode.workspace.onDidCloseTextDocument(document => {
             this.lastLine = undefined;
             this.markJump.updateStatusBar();
+            this.treeProvider.refresh();
         }, this, subscriptions);
         vscode.workspace.onDidChangeConfiguration(() => {
             this.markJump.updateStatusBar();
+            this.treeProvider.refresh();
         }, this, subscriptions);
         vscode.window.onDidChangeTextEditorViewColumn(event => {
             this.lastLine = undefined;
             this.markJump.updateStatusBar();
+            this.treeProvider.refresh();
         }, this, subscriptions);
         vscode.window.onDidChangeActiveTextEditor(editor => {
             this.lastLine = undefined;
             this.markJump.updateStatusBar();
+            this.treeProvider.refresh();
         }, this, subscriptions);
         vscode.window.onDidChangeTextEditorSelection(event => {
             if(event.selections.length > 1){
@@ -120,6 +128,7 @@ class MarkJumpController {
             }
             this.lastLine = event.selections[0].active.line;
             this.markJump.updateStatusBar();
+            this.treeProvider.refresh();
         }, this, subscriptions);
 
         this.disposable = vscode.Disposable.from(...subscriptions);
@@ -133,10 +142,16 @@ class MarkJumpController {
 class MarkJumpTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private markJump: MarkJump;
     private context: vscode.ExtensionContext;
+    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem>();
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     constructor(markJump: MarkJump, context: vscode.ExtensionContext){
         this.markJump = markJump;
         this.context = context;
+    }
+
+    refresh() {
+        this._onDidChangeTreeData.fire();
     }
 
     getTreeItem(element: vscode.TreeItem){
@@ -144,6 +159,9 @@ class MarkJumpTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     }
 
     getChildren(element?: vscode.TreeItem) {
+        if (!this.markJump.treeAllow) {
+            return [];
+        }
         return this.markJump.getMarks(
             vscode.window.activeTextEditor, undefined, true
         ).then(marks => {
@@ -202,9 +220,11 @@ interface MarkFilter {
 }
 
 class MarkJump {
+    treeAllow = true;
     lastSelections: vscode.Selection[];
     statusItem: vscode.StatusBarItem;
     useLimit = -1;
+    testPatterns = [];
     private lastWarning: number = Date.now() - 10000;
 
     createStatusBar(){
@@ -225,7 +245,8 @@ class MarkJump {
 
     updateStatusBar(withProjectWide: boolean = true){
         let configurations = vscode.workspace.getConfiguration("markJump");
-        if(!configurations.get<boolean>("showStatusItem")){
+        this.treeAllow = configurations.get<boolean>("showExplorerView");
+        if (!configurations.get<boolean>("showStatusItem")) {
             this.statusItem.hide();
             return;
         }
@@ -653,9 +674,24 @@ class MarkJump {
     }
 
     getContentMarks(uri: vscode.Uri, ...filters: MarkFilter[]){
+        let configurations = vscode.workspace.getConfiguration("markJump");
+        let patterns = configurations.get<string[]>("testPatterns").concat(
+            configurations.get<string[]>("additionalTestPatterns")
+        );
+
         let items: MarkItem[] = [];
         let data = fs.readFileSync(uri.fsPath);
-        let lines = data.toString().split("\n");
+        let content = data.toString();
+
+        let result = patterns.some(
+            pattern => XRegExp.test(content, XRegExp(pattern))
+        );
+
+        if (!result) {
+            return [];
+        }
+
+        let lines = content.split("\n");
 
         lines.forEach((lineText, lineNumber) => {
             let filter = filters.find(
