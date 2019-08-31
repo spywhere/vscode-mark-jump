@@ -2,7 +2,7 @@
   "name": "mark-jump",
   "displayName": "Mark Jump",
   "description": "Jump to the marked section in the code",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "publisher": "spywhere",
   "icon": "images/icon.png",
   "bugs": {
@@ -46,19 +46,19 @@
         "title": "Mark Jump: Jump to Project-wide Marks..."
       },
       {
-        "command": "markJump.jumpToMark",
+        "command": "markJump.jumpToMarks",
         "title": "Mark Jump: Jump to Marks..."
       },
       {
-        "command": "markJump.jumpToSection",
+        "command": "markJump.jumpToEditorMarks.section",
         "title": "Mark Jump: Jump to Sections..."
       },
       {
-        "command": "markJump.jumpToTODO",
+        "command": "markJump.jumpToEditorMarks.todo",
         "title": "Mark Jump: Jump to TODOs..."
       },
       {
-        "command": "markJump.jumpToNote",
+        "command": "markJump.jumpToEditorMarks.note",
         "title": "Mark Jump: Jump to Notes..."
       }
     ],
@@ -283,7 +283,7 @@
     "@types/node": "^8.0.53",
     "@types/xregexp": "^3.0.29",
     "typescript": "^2.6.1",
-    "vscode": "^1.1.7"
+    "vscode": "^1.1.36"
   },
   "dependencies": {
     "xregexp": "^3.2.0"
